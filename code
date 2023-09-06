@@ -1,0 +1,93 @@
+pip install shap
+
+pip install eli5
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+from eli5.sklearn import PermutationImportance
+import eli5
+import webbrowser
+
+data = pd.read_csv("data.csv", sep=';')
+data
+
+column_names = data.columns.tolist()
+column_names.remove('Tp-e distance')
+
+X = data[column_names]
+y = data['Tp-e distance']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+from sklearn.inspection import permutation_importance
+
+---Permutation Importance---
+model1 = RandomForestRegressor()
+model1.fit(X_train, y_train)
+
+perm = permutation_importance(model1, X_test, y_test, n_repeats=10, random_state=42)
+
+importance_scores = perm.importances_mean
+sorted_idx = importance_scores.argsort()[::-1][:20]
+for i in sorted_idx:
+    print(f"{X_test.columns[i]:<30} {importance_scores[i]:.3f}")
+
+import matplotlib.pyplot as plt
+
+data.shape
+
+importance_scores = perm.importances_mean
+sorted_idx = importance_scores.argsort()[::-1][:15]
+
+fig, ax = plt.subplots(figsize=(6, 10))
+ax.barh(range(15), importance_scores[sorted_idx], color="black")
+ax.set_yticks(range(15))
+ax.set_yticklabels(X_test.columns[sorted_idx], fontsize=12)
+ax.invert_yaxis()
+ax.set_xlabel("Importance Scores", fontsize=12)
+ax.set_ylabel("Features", fontsize=12)
+ax.set_title("Permutation Importance Rankings", fontsize=14)
+
+plt.show()
+
+
+--Explainable AI--
+pip install shap
+
+import shap
+
+explainer = shap.TreeExplainer(model_n)
+
+shap_values = explainer.shap_values(X_train)
+
+len(shap_values)
+
+shap.summary_plot(shap_values, feature_names = X_train.columns, color='black')
+
+feature_names=X_train.columns
+
+len(X_train.columns)
+
+X_train.columns
+
+feature_idx = np.where(X_train.columns == feature_names)
+
+feature_shap_values = np.sum(shap_values[feature_idx])
+
+feature_shap_values
+
+df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': feature_shap_values})
+df
+
+shap.initjs()
+shap.force_plot(explainer.expected_value[0], shap_values[0], feature_names=X_train.columns.tolist())
+
+shap_values = explainer(X_train)
+
+shap.plots.bar(shap_values)
+
+shap.plots.heatmap(shap_values)
